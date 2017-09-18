@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Gravity simulation</title>
+
+		<style type="text/css">
+			#game {
+				display: block; 
+				background-color: #fff; 
+				border: 2px solid #666; 
+				margin: auto; 
+			}
+		</style>
+	</head>
+
+	<body>
+		<canvas id="game"></canvas>
+
+		<script type="text/javascript">
+			var game = document.getElementById("game"); 
+			var innerWidth = window.innerWidth; 
+			var innerHeight = window.innerHeight; 
+			var width = innerWidth - 40; 
+			var height = innerHeight - 40; 
+			game.width = width; 
+			game.height = height; 
+
+			var ctx = game.getContext("2d"); //context for drawing with JavaScript
+			var framesPerSec = 50, loop = null; 
+
+			var grass = {height: 20, color: "#def"}; //grass
+			var ball = new Ball(grass.height/2); //creates ball 
+			var keys = {37: false, 38: false, 39: false}; //keys HashMap
+
+
+			function update() { //updates game elements properties
+				if (keys[37]) ball.velocity.x = -400; 
+				if (keys[38] && ball.pos.y == (height - ball.radius - ball.offset)) ball.velocity.y = ball.lastVy = -800; 
+				if (keys[39]) ball.velocity.x = 400; 
+				if (!keys[37] && !keys[39]) ball.velocity.x = 0; 
+
+				var t = 1/framesPerSec; //unit time
+				ball.velocity.y += (ball.gravity)*t; 
+				ball.pos.x += (ball.velocity.x)*t; 
+				ball.pos.y += (ball.velocity.y)*t + 0.5*(ball.gravity)*t*t; 
+
+				if (ball.pos.x < ball.radius) ball.pos.x = ball.radius;  
+				if (ball.pos.x > (width - ball.radius)) ball.pos.x = width - ball.radius;  
+				if (ball.pos.y >= (height - ball.radius - ball.offset)) {
+					ball.pos.y = height - ball.radius - ball.offset; 
+					ball.velocity.y = ball.bounce * ball.lastVy; 
+					ball.lastVy = ball.velocity.y; 
+				}
+			}
+
+			function render() { //draws all game elements
+				ctx.clearRect(0, 0, width, height); 
+
+				ctx.fillStyle = "#4f4"; 
+				ctx.fillRect(0, height - grass.height, width, grass.height); 
+				ctx.fill(); 
+
+				ctx.fillStyle = grass.color; 
+				ctx.fillRect(0, 0, width, height - grass.height); 
+				ctx.fill(); 
+
+
+                ctx.fillStyle = ball.color; 
+				ctx.beginPath(); 
+                ctx.arc(ball.pos.x, ball.pos.y, ball.radius, 0, 2*Math.PI);
+                ctx.fill(); 
+			}
+
+			function Ball(offset) { //ball constructor
+				this.radius = 20; 
+				this.color = "#800"; 
+				this.bounce = 0.7; //coefficient of restitution
+				this.offset = (offset) ? offset : 0; 
+				this.pos = new positionVector(width/2, height - this.radius - this.offset); 
+				this.velocity = new velocityVector(0, 0); 
+				this.lastVy = 0; //stores last initial velocity from ground
+				this.scaleFactor = 1000/9.81; 
+				this.gravity = 9.81 * this.scaleFactor; //acceleration due to gravity
+			}
+
+			function positionVector(px, py) { //position vector constructor 
+				this.x = px; 
+				this.y = py; 
+			}
+
+			function velocityVector(vx, vy) { //velocity vector constructor
+				this.x = vx; 
+				this.y = vy; 
+			}
+
+
+			window.addEventListener("keydown", function(e) {
+				var keyCode = e.keyCode; 
+				if (((keyCode == 38) || (keyCode == 37 && keys[39] == false) || (keyCode == 39 && keys[37] == false)) && keys[keyCode] == false) keys[keyCode] = true; 
+			}, false); 
+
+			window.addEventListener("keyup", function(e) {
+				var keyCode = e.keyCode; 
+				if (keys[keyCode]) keys[keyCode] = false; 
+			}, false); 
+
+
+			loop = setInterval(function() { //game loop
+				update(); 
+				render(); 
+			}, 1000/framesPerSec); 
+		</script>
+	</body>
+</html>
